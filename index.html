@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Receipt Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
+    <style>
+        /* Previous styles remain same until receipt-footer */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .receipts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .receipt {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .receipt-details {
+            margin-bottom: 15px;
+        }
+
+        .receipt-footer {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        /* New styles for signature */
+        .signature-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .signature-pad-container {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 10px 0;
+            background: white;
+        }
+
+        #signature-pad {
+            width: 100%;
+            height: 200px;
+        }
+
+        .signature-buttons {
+            margin-top: 10px;
+        }
+
+        .signature-image {
+            max-height: 60px;
+            margin-top: 5px;
+        }
+
+        .signature-line {
+            border-top: 1px dotted #ccc;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .signature-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        
+        .signature-area {
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .signature-image {
+            max-height: 60px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .signature-line {
+            border-top: 1px dotted #ddd;
+            margin-top: 5px;
+            width: 200px;
+        }
+        
+        .signature-label {
+            color: #333;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        .styled-signature {
+            font-family: 'Dancing Script', cursive;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .tab-container {
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+        
+
+        @media print {
+            .form-container {
+                display: none;
+            }
+
+            .receipt {
+                break-inside: avoid;
+                border: 1px solid #000;
+                margin: 10px;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <h2>Rent Receipt Generator</h2>
+        <!-- Previous form fields remain same -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="fiscalYear">Financial Year Start:</label>
+                <select id="fiscalYear"></select>
+            </div>
+            <div class="form-group">
+                <label for="rent">Monthly Rent:</label>
+                <input type="number" id="rent" placeholder="12345">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="tenant">Tenant Name:</label>
+            <input type="text" id="tenant" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+            <label for="address">Property Address:</label>
+            <input type="text" id="address"
+                placeholder="123, ABC Street, XYZ City, State - 123456">
+        </div>
+        <div class="form-group">
+            <label for="landlord">Landlord Name:</label>
+            <input type="text" id="landlord" placeholder="Jane Doe">
+        </div>
+        <div class="form-group">
+            <label for="landlordAddress">Landlord Address:</label>
+            <input type="text" id="landlordAddress" placeholder="456, XYZ Street, ABC City, State - 654321">
+        </div>
+        <div class="form-group">
+            <label for="pan">Landlord PAN:</label>
+            <input type="text" id="pan" placeholder="ABCDE1234F">
+        </div>
+
+        <!-- New signature section -->
+        <div class="signature-container">
+            <h3>Signature</h3>
+            <div class="tab-container">
+                <button class="tab-button active" onclick="showTab('upload')">Upload Signature</button>
+                <button class="tab-button" onclick="showTab('draw')">Draw Signature</button>
+                <button class="tab-button" onclick="showTab('style')">Styled Signature</button>
+            </div>
+
+            <div id="upload-tab" class="tab-content active">
+                <input type="file" id="signature-upload" accept="image/*" onchange="handleSignatureUpload(event)">
+            </div>
+
+            <div id="draw-tab" class="tab-content">
+                <div class="signature-pad-container">
+                    <canvas id="signature-pad"></canvas>
+                </div>
+                <div class="signature-buttons">
+                    <button onclick="clearSignature()">Clear</button>
+                    <button onclick="saveSignature()">Save</button>
+                </div>
+            </div>
+
+            <div id="style-tab" class="tab-content">
+                <select id="signature-style" onchange="updateStyledSignature()">
+                    <option value="pacifico">Style 1</option>
+                    <option value="dancing">Style 2</option>
+                    <option value="indie">Style 3</option>
+                </select>
+                <div id="styled-signature"></div>
+            </div>
+        </div>
+
+        <button onclick="generateReceipts()">Generate Receipts</button>
+        <button onclick="window.print()">Print Receipts</button>
+    </div>
+
+    <div id="receipts" class="receipts-container"></div>
+
+    <script>
+        let signaturePad;
+        let currentSignature = null;
+        let signatureType = 'upload'; // 'upload', 'draw', or 'style'
+
+        function initSignaturePad() {
+            const canvas = document.getElementById('signature-pad');
+            signaturePad = new SignaturePad(canvas, {
+                backgroundColor: 'rgb(255, 255, 255)'
+            });
+        }
+
+        function isProvisionalReceipt(month, year) {
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth() + 1;
+                const currentDay = today.getDate();
+
+                // If it's before the 5th of current month, previous month's receipt should be provisional
+                const previousMonth = currentDay < 5 ? currentMonth - 1 : currentMonth;
+                const previousMonthYear = previousMonth === 0 ? currentYear - 1 : currentYear;
+
+                // Convert month number to fiscal year month (April = 1, March = 12)
+                const fiscalMonth = month <= 9 ? month + 3 : month - 9;
+
+                // Check if this receipt is for current or future months
+                if (year > currentYear || (year === currentYear && fiscalMonth > currentMonth)) {
+                    return true;
+                }
+
+                // Check if this receipt is for the previous month and it's before the 5th
+                if (year === previousMonthYear && fiscalMonth === previousMonth && currentDay < 5) {
+                    return true;
+                }
+
+                return false;
+            }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+            signatureType = tabName;
+            if (tabName === 'draw' && !signaturePad) {
+                initSignaturePad();
+            }
+        }
+
+        function handleSignatureUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    currentSignature = e.target.result;
+                    generateReceipts();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearSignature() {
+            if (signaturePad) {
+                signaturePad.clear();
+            }
+        }
+
+        function saveSignature() {
+            if (signaturePad && !signaturePad.isEmpty()) {
+                currentSignature = signaturePad.toDataURL();
+                generateReceipts();
+            }
+        }
+
+        function updateStyledSignature() {
+            const style = document.getElementById('signature-style').value;
+            const landlordName = document.getElementById('landlord').value;
+            currentSignature = `<div style="font-family: '${style}', cursive; font-size: 24px;">${landlordName}</div>`;
+            generateReceipts();
+        }
+
+        // Previous functions remain same
+        function initYearDropdown() {
+            const select = document.getElementById('fiscalYear');
+            let currentYear = new Date().getFullYear();
+            // if current year is Jan, take previous financial year
+            if (new Date().getMonth() === 0) {
+                currentYear = currentYear - 1;
+            }
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `${year}-${year + 1}`;
+                if (year === currentYear) option.selected = true;
+                select.appendChild(option);
+            }
+        }
+
+        function getLastDayOfMonth(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatPeriod(startDate, endDate) {
+            return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        }
+
+        function generateSignatureHtml() {
+                let signatureContent = '';
+
+                // Add uploaded/drawn signature image or styled signature if present
+                if (currentSignature) {
+                    if (signatureType === 'style') {
+                        signatureContent = `<div class="styled-signature">${currentSignature}</div>`;
+                    } else {
+                        signatureContent = `<img src="${currentSignature}" alt="Signature" class="signature-image">`;
+                    }
+                }
+
+                // Always add the signature line and label
+                return `
+                    <div class="signature-area">
+                        ${signatureContent}
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Landlord Sign</div>
+                    </div>
+                `;
+            }
+
+        function generateReceipts() {
+                const receiptsContainer = document.getElementById('receipts');
+                receiptsContainer.innerHTML = '';
+
+                const startYear = parseInt(document.getElementById('fiscalYear').value);
+                const tenant = document.getElementById('tenant').value;
+                const address = document.getElementById('address').value;
+                const rent = document.getElementById('rent').value;
+                const landlord = document.getElementById('landlord').value;
+                const landlordAddress = document.getElementById('landlordAddress').value;
+                const pan = document.getElementById('pan').value;
+
+                for (let month = 1; month <= 12; month++) {
+                    const fiscalMonth = month <= 9 ? month + 3 : month - 9;
+                    const fiscalYear = month <= 9 ? startYear : startYear + 1;
+
+                    const rentMonth = fiscalMonth === 1 ? 12 : fiscalMonth - 1;
+                    const rentYear = fiscalMonth === 1 ? fiscalYear - 1 : fiscalYear;
+
+                    const startDate = new Date(rentYear, rentMonth - 1, 1);
+                    const endDate = new Date(rentYear, rentMonth - 1, getLastDayOfMonth(rentYear, rentMonth - 1));
+                    const receiptDate = new Date(fiscalYear, fiscalMonth - 1, 5);
+
+                    const isProvisional = isProvisionalReceipt(month, fiscalYear);
+
+                    const receipt = document.createElement('div');
+                    receipt.className = 'receipt';
+                    receipt.innerHTML = `
+                    <div style="position: relative;">
+                    <div class="receipt-header">
+                        <h2>Rent Receipt</h2>
+                        <div>Receipt No: ${month}</div>
+                        <div>Date: ${formatDate(receiptDate)}</div>
+                    </div>
+                    <div class="receipt-details">
+                        Received sum of <strong>INR Rs. ${rent}</strong> from <strong>${tenant}</strong> towards the rent of property located at <strong>${address}</strong> for the period from ${formatPeriod(startDate, endDate)}.
+                    </div>
+                    <div class="receipt-footer">
+                        <div><strong>Landlord Name:</strong> ${landlord}</div>
+                        <div><strong>Landlord Address:</strong> ${landlordAddress}</div>
+                        <div><strong>Landlord PAN:</strong> ${pan}</div>
+                        ${generateSignatureHtml()}
+                    </div>
+                    ${isProvisional ? '<div class="provisional-text" style="position: absolute; top: 10px; right: 6px; font-size: 0.7rem;">PROVISIONAL</div>' : ''}
+                    </div>
+                `;
+                    receiptsContainer.appendChild(receipt);
+                }
+            }
+
+        // Initialize on page load
+        initYearDropdown();
+        generateReceipts();
+    </script>
+</body>
+
+</html>
